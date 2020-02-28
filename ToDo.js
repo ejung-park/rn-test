@@ -1,39 +1,48 @@
 import React, {Component} from "react";
-import { View, Text, TouchableOpacity, StyleSheet,Dimensions, TextInput } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet,Dimensions, TextInput } from "react-native";
+import PropTypes from "prop-types";
 
 const {width, height} = Dimensions.get("window");
+
 export default class ToDo extends Component {
 
-    state = {
-        isEditing: false,
-        isCompleted : false,
-        toDoValue : ""
+    constructor (props) {
+      super(props);
+      this.state = { isEditing:false, toDoValue: props.text };
+    }
+
+    static propTypes = {
+        text: PropTypes.string.isRequired,
+        isCompleted: PropTypes.bool.isRequired,
+        deleteToDo: PropTypes.func.isRequired,
+        id: PropTypes.string.isRequired,
+        uncompleteToDo: PropTypes.func.isRequired,
+        completeToDo: PropTypes.func.isRequired,
+        updateToDo: PropTypes.func.isRequired
     };
 
     render(){
-        
-        const { isCompleted, isEditing, toDoValue } = this.state;
-        const { text } = this.props;
-
+      const { isEditing, toDoValue } = this.state;
+      const { text, id, deleteToDo, isCompleted } = this.props;
        return (
         <View style={styles.container}>
             <TouchableOpacity onPress={this._toggleComplete}>
                 <View style={[styles.circle, isCompleted ? styles.completeCircle : styles.uncompleteCircle]}></View>
             </TouchableOpacity>
             {isEditing ? (
-                <TextInput style={styles.text} 
-                placeholder={"Write Todo"} 
-                value={toDoValue} 
-                multiline={true} 
-                onChangeText={this._controllInput} 
+                <TextInput style={[styles.text,styles.column]}
+                placeholder={"Write Todo"}
+                value={toDoValue}
+                multiline={true}
+                onChangeText={this._controllInput}
                 returnKeyType={"done"}
                 onBlur={this._finishEditing}></TextInput>
             ):(
-                <Text style={[styles.text, isCompleted? styles.completeText:styles.uncompleteText]}>
+                <Text style={[styles.text,styles.column, isCompleted? styles.completeText:styles.uncompleteText]}>
                     {text}
                 </Text>
             )}
-            {isEditing ? 
+            {isEditing ?
             (
             <View style={styles.actions}>
                 <TouchableOpacity onPressOut={this._finishEditing}>
@@ -49,7 +58,7 @@ export default class ToDo extends Component {
                         <Text style={styles.actionText}>Edit</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity>
+                <TouchableOpacity onPressOut={() => deleteToDo(id)}>
                     <View style={styles.actionContainer}>
                         <Text style={styles.actionText}>Del</Text>
                     </View>
@@ -59,28 +68,25 @@ export default class ToDo extends Component {
         </View>
        );
     }
-    // _toggleComplete = () => {
-    //     this.setState(prevState => {
-    //         return {
-    //             isCompleted : !prevState.isCompleted
-    //         }
-    //     });
-    // }
+
     _toggleComplete = () => {
-        this.setState(prevState => {
-            return {
-                isCompleted : !prevState.isCompleted
-            }
-        });
+        const { isCompleted, unCompleteToDo, completeToDo, id } = this. props;
+        if(isCompleted){
+          unCompleteToDo(id);
+        }else{
+          completeToDo(id);
+        }
+
     }
     _startEditing = () => {
-        const { text } = this.props;
         this.setState({
-            isEditing : true,
-            toDoValue : text
+            isEditing : true
         })
     }
     _finishEditing = () => {
+        const { toDoValue } = this. state;
+        const {id, updateToDo} = this.props;
+        updateToDo( id, toDoValue );
         this.setState({
             isEditing : false
         })
@@ -104,6 +110,7 @@ const styles = StyleSheet.create ({
     text: {
         fontWeight : "600",
         marginVertical : 20,
+        marginLeft:0,
         fontSize:20
     },
     circle : {
@@ -116,8 +123,8 @@ const styles = StyleSheet.create ({
         marginLeft:20
     },
     completeCircle : {
-        borderColor : "#bbb"       
-    }, 
+        borderColor : "#bbb"
+    },
     uncompleteCircle : {
         borderColor : "#23bddd"
     },
